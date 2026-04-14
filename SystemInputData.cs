@@ -8,12 +8,12 @@ namespace coursework
 {
     internal class SystemInputData
     {
-        public List<Student> _students = new List<Student>();
-        public List<Comment> _advantages = new List<Comment>();
-        public List<Comment> _disadvantages = new List<Comment>();
-        public GeneralData _generalData;
+        public List<Student> students = new List<Student>();
+        public List<Comment> advantages = new List<Comment>();
+        public List<Comment> disadvantages = new List<Comment>();
+        public GeneralData generalData;
 
-        public void ParseExcelFile(string path)
+        public bool ParseExcelFile(string path)
         {
             try
             {
@@ -34,11 +34,11 @@ namespace coursework
                                     break;
 
                                 case "Недостатки":
-                                    ReadComments(table, _disadvantages);
+                                    ReadComments(table, disadvantages);
                                     break;
 
                                 case "Достоинства":
-                                    ReadComments(table, _advantages);
+                                    ReadComments(table, advantages);
                                     break;
 
                                 case "Список студентов":
@@ -46,12 +46,16 @@ namespace coursework
                                     break;
                             }
                         }
+                        
+
+                        return true;
                     }
                 }
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Ошибка чтения Excel: " + ex.Message);
+                return false;
             }
         }
 
@@ -72,7 +76,7 @@ namespace coursework
             string sDate = table.Rows[10][1]?.ToString();
             
 
-            _generalData = new GeneralData(
+            generalData = new GeneralData(
                 type,
                 course,
                 direction,
@@ -115,7 +119,7 @@ namespace coursework
         }
 
         public void ReadStudent(DataTable table) {
-            _students.Clear();
+            students.Clear();
             for (int i = 1; i < table.Rows.Count; i++) {
                 var row = table.Rows[i];
                 string name = row[0]?.ToString() ?? "";
@@ -125,9 +129,13 @@ namespace coursework
                 string topic = row[1]?.ToString() ?? "";
 
                 if (int.TryParse(row[2]?.ToString() ?? "", out int grade)) {
-                    _students.Add(new Student(name, topic, grade));
+                    students.Add(new Student(name, topic, grade));
                 }
             }
         }
+
+        
+
+        
     }
 }

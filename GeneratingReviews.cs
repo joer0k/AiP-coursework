@@ -20,9 +20,19 @@ namespace coursework
         private readonly List<Student> _students;
         private readonly List<Comment> _advantages;
         private readonly List<Comment> _disadvantages;
-        public string _signaturePath { get; }
+        public string signaturePath { get; }
 
-        public string _savePath { get; }
+        public string savePath { get; }
+
+        private readonly List<(int advantageIndex, int disadvantageIndex)> _conflicts =
+        new List<(int, int)>
+        {
+            (5, 0),
+            (1, 1),
+            (4, 2)
+        };
+
+                         
 
         public GeneratingReviews(GeneralData generalData, List<Student> students,
                              List<Comment> advantages, List<Comment> disadvantages,
@@ -32,18 +42,75 @@ namespace coursework
             _students = students;
             _advantages = advantages;
             _disadvantages = disadvantages;
-            _signaturePath = signaturePath;
-            _savePath = savePath;
+            this.signaturePath = signaturePath;
+            this.savePath = savePath;
         }
 
-        private string GetRandomComments(List<Comment> source, int grade, int count = 4) {
-            return string.Join(". ", source
-                .Where(c => (grade == 5 && c.ForGrade5) || (grade == 4 && c.ForGrade4))
-                .OrderBy(x => Guid.NewGuid())
-                .Take(count)
-                .Select(c => c.Text));
+        private (string advantagesText, string disadvantagesText) GetRandomComments(int grade)
+        {
+            var (advantagesCount, disadvantagesCount) = GetCommentCountsByGrade(grade);
+
+            var availableAdvantages = _advantages
+                .Select((comment, index) => new { Comment = comment, Index = index })
+                .Where(x => IsSuitableForGrade(x.Comment, grade))
+                .ToList();
+
+            var availableDisadvantages = _disadvantages
+                .Select((comment, index) => new { Comment = comment, Index = index })
+                .Where(x => IsSuitableForGrade(x.Comment, grade))
+                .ToList();
+
+           
+            const int maxAttempts = 1000;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                var selectedAdvantages = availableAdvantages
+                    .OrderBy(x => Guid.NewGuid())
+                    .Take(advantagesCount)
+                    .ToList();
+
+                var selectedDisadvantages = availableDisadvantages
+                    .OrderBy(x => Guid.NewGuid())
+                    .Take(disadvantagesCount)
+                    .ToList();
+
+                bool hasConflict = _conflicts.Any(conflict =>
+                    selectedAdvantages.Any(a => a.Index == conflict.advantageIndex) &&
+                    selectedDisadvantages.Any(d => d.Index == conflict.disadvantageIndex));
+
+                if (!hasConflict)
+                {
+                    string advantagesText = string.Join(". ", selectedAdvantages.Select(x => x.Comment.Text));
+                    string disadvantagesText = string.Join(". ", selectedDisadvantages.Select(x => x.Comment.Text));
+
+                    return (advantagesText, disadvantagesText);
+                }
+            }
+
+            throw new Exception($"Не удалось подобрать совместимые комментарии для оценки {grade}.");
+        }
+        private (int advantagesCount, int disadvantagesCount) GetCommentCountsByGrade(int grade)
+        {
+            return grade switch
+            {
+                5 => (4, 1),
+                4 => (3, 2),
+                3 => (2, 3),
+                _ => throw new ArgumentException($"Для оценки {grade} не задано количество комментариев")
+            };
         }
 
+        private bool IsSuitableForGrade(Comment comment, int grade)
+        {
+            return grade switch
+            {
+                3 => comment.ForGrade3,
+                4 => comment.ForGrade4,
+                5 => comment.ForGrade5,
+                _ => false
+            };
+        }
 
         private void ConvertToPDF(string docxPath) {
             string pdfPath = Path.ChangeExtension(docxPath, ".pdf");
@@ -92,7 +159,7 @@ namespace coursework
                 File.Copy(originalTemplatePath, tempTemplatePath, true);
 
                 foreach (var student in _students) {
-                    string outputFileName = Path.Combine(_savePath, $"Рецензия_{student.GetFirstName}.docx");
+                    string outputFileName = Path.Combine(savePath, $"Рецензия_{student.GetFirstName}.docx");
 
                     var ReplaceMap = new Dictionary<string, string> {
                         {"{NAME}", student.Name },
@@ -114,32 +181,32 @@ namespace coursework
                             });
                         }
 
-                        //var advantagesText = string.Join(". ", _advantages
-                        //.Where(c => (student.Grade == 5 && c.ForGrade5) || (student.Grade == 4 && c.ForGrade4)).Take(4)
-                        //.Select(c => c.Text));
+                        for (int i = 0; i < 8; i++) {
+                            doc.ReplaceText(new StringReplaceTextOptions
+                            {
+                                SearchValue = "{GRADE" + $"{i + 1}" + "}",
+                                NewValue = $"{student.Grade}"
+                            });
+                        }
 
-                        var advantagesText = GetRandomComments(_advantages, student.Grade);
+
+                        var comments = GetRandomComments(student.Grade);
 
                         doc.ReplaceText(new StringReplaceTextOptions
                         {
                             SearchValue = "{ADVANTAGES}",
-                            NewValue = advantagesText
+                            NewValue = comments.advantagesText
                         });
 
-                        //                 var disadvantagesText = string.Join(". ", _disadvantages
-                        //.Where(c => (student.Grade == 5 && c.ForGrade5) || (student.Grade == 4 && c.ForGrade4)).Take(4)
-                        //.Select(c => c.Text));
-
-                        var disadvantagesText = GetRandomComments(_disadvantages, student.Grade);
                         doc.ReplaceText(new StringReplaceTextOptions
                         {
                             SearchValue = "{DISADVANTAGES}",
-                            NewValue = disadvantagesText
+                            NewValue = comments.disadvantagesText
                         });
 
-                        if (File.Exists(_signaturePath))
+                        if (File.Exists(signaturePath))
                         {
-                            var image = doc.AddImage(_signaturePath);
+                            var image = doc.AddImage(signaturePath);
 
                             float height = 48.19f;
                             float width = 103.19f;

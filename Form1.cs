@@ -82,13 +82,16 @@ namespace coursework
                 await Task.Run(() =>
                 {
                     var inputData = new SystemInputData();
-                    inputData.ParseExcelFile(templatepath);
+                     if (!inputData.ParseExcelFile(templatepath)) {
+                        return;
+                    };
 
-                    var engine = new GeneratingReviews(inputData._generalData, inputData._students, inputData._advantages, inputData._disadvantages, signaturepath, savepath);
+                    var engine = new GeneratingReviews(inputData.generalData, inputData.students, inputData.advantages, inputData.disadvantages, signaturepath, savepath);
                     engine.CreateReviews();
+                    MessageBox.Show(this, "Все готово!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
                 });
 
-                MessageBox.Show(this, "Все готово!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
 
             }
