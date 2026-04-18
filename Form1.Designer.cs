@@ -94,6 +94,7 @@
             // 
             // btnWay
             // 
+            btnWay.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnWay.BackColor = Color.WhiteSmoke;
             btnWay.Font = new Font("Cambria", 9.75F, FontStyle.Bold);
             btnWay.Location = new Point(88, 308);
@@ -136,6 +137,7 @@
             // 
             // btnCreate
             // 
+            btnCreate.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnCreate.BackColor = Color.WhiteSmoke;
             btnCreate.Font = new Font("Cambria", 9.75F, FontStyle.Bold);
             btnCreate.Location = new Point(88, 394);
@@ -152,6 +154,7 @@
             // 
             // buttonEdit
             // 
+            buttonEdit.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             buttonEdit.BackColor = Color.WhiteSmoke;
             buttonEdit.Font = new Font("Cambria", 9.75F, FontStyle.Bold);
             buttonEdit.Location = new Point(476, 394);
@@ -185,8 +188,7 @@
             // 
             // Form1
             // 
-            AutoScaleDimensions = new SizeF(7F, 15F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.White;
             ClientSize = new Size(685, 495);
             Controls.Add(toolStrip1);
