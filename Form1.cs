@@ -17,22 +17,19 @@ namespace coursework
 
         }
 
-        private void SetUIEnabled(bool enabled)
-        {
-            btnCreate.Enabled = enabled;
-            btnTemplate.Enabled = enabled;
-            btnSignature.Enabled = enabled;
-            btnWay.Enabled = enabled;
+        //private void SetUIEnabled(bool enabled)
+        //{
+        //    btnCreate.Enabled = enabled;
+        //    btnTemplate.Enabled = enabled;
+        //    btnSignature.Enabled = enabled;
+        //    btnWay.Enabled = enabled;
 
-            this.Cursor = enabled ? Cursors.Default : Cursors.WaitCursor;
-        }
+        //    this.Cursor = enabled ? Cursors.Default : Cursors.WaitCursor;
+        //}
 
         private void btnTemplate_Click(object sender, EventArgs e)
         {
-            if (openTemplateDialog.ShowDialog() == DialogResult.Cancel)
-            {
-                return;
-            }
+            if (openTemplateDialog.ShowDialog() == DialogResult.Cancel){ return; }
             string filename = openTemplateDialog.FileName;
 
             string templatepath = System.IO.Path.GetFullPath(filename);
@@ -70,7 +67,6 @@ namespace coursework
                 return;
             }
 
-            SetUIEnabled(false);
 
 
             try
@@ -81,6 +77,9 @@ namespace coursework
 
                 await Task.Run(() =>
                 {
+                    this.Cursor = Cursors.WaitCursor;
+                    btnCreate.Enabled = false;
+                    buttonEdit.Enabled = false;
                     var inputData = new SystemInputData();
                      if (!inputData.ParseExcelFile(templatepath)) {
                         return;
@@ -101,7 +100,9 @@ namespace coursework
             }
             finally
             {
-                SetUIEnabled(true);
+                this.Cursor = Cursors.Default;
+                btnCreate.Enabled = true;
+                buttonEdit.Enabled = true;
             }
             ;
 
@@ -125,6 +126,7 @@ namespace coursework
 
                 File.Copy(originalTemplate, tempTemplate, true);
 
+                btnCreate.Enabled = false;
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
                     FileName = tempTemplate,
@@ -170,7 +172,7 @@ namespace coursework
             finally
             {
                 if (File.Exists(tempTemplate)) File.Delete(tempTemplate);
-
+                btnCreate.Enabled = true;
             }
 
 

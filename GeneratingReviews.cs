@@ -90,6 +90,7 @@ namespace coursework
 
             throw new Exception($"Не удалось подобрать совместимые комментарии для оценки {grade}.");
         }
+
         private (int advantagesCount, int disadvantagesCount) GetCommentCountsByGrade(int grade)
         {
             return grade switch
@@ -130,11 +131,6 @@ namespace coursework
         }
 
         public void CreateReviews() {
-            //var assembly = Assembly.GetExecutingAssembly();
-
-            //string resourceName = "coursework.revTemplate.docx";
-
-            //string tempTemplatePath = Path.Combine(Path.GetTempPath(), "template_temp.docx");
 
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string originalTemplatePath = Path.Combine(baseDir, "revTemplate.docx");
@@ -148,13 +144,6 @@ namespace coursework
 
             try
             {
-                //using (Stream stream = assembly.GetManifestResourceStream(resourceName)) {
-                //    if (stream == null) throw new Exception("Возникли проблемы с необходимым для создания рецензии шаблоном");
-
-                //    using (FileStream fileStream = new FileStream(tempTemplatePath, FileMode.Create)) {
-                //        stream.CopyTo(fileStream);
-                //    }
-                //}
 
                 File.Copy(originalTemplatePath, tempTemplatePath, true);
 
