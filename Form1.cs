@@ -8,12 +8,12 @@ namespace coursework
         {
             InitializeComponent();
             openTemplateDialog.Filter = "Excel files(.xlsx, .xls)|*.xlsx;*.xls";
-            openTemplateDialog.Title = "Выберите файл с исходными данными";
+            openTemplateDialog.Title = "Р’С‹Р±РµСЂРёС‚Рµ С„Р°Р№Р» СЃ РёСЃС…РѕРґРЅС‹РјРё РґР°РЅРЅС‹РјРё";
 
-            openSignatureDialog.Filter = "Все изображения|*.jpg;*.jpeg;*.png|" +
-                         "JPEG файлы (*.jpg;*.jpeg)|*.jpg;*.jpeg|" +
-                         "PNG файлы (*.png)|*.png";
-            openSignatureDialog.Title = "Выберите картинку вашей подписи";
+            openSignatureDialog.Filter = "Р’СЃРµ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ|*.jpg;*.jpeg;*.png|" +
+                         "JPEG С„Р°Р№Р»С‹ (*.jpg;*.jpeg)|*.jpg;*.jpeg|" +
+                         "PNG С„Р°Р№Р»С‹ (*.png)|*.png";
+            openSignatureDialog.Title = "Р’С‹Р±РµСЂРёС‚Рµ РєР°СЂС‚РёРЅРєСѓ РІР°С€РµР№ РїРѕРґРїРёСЃРё";
 
         }
 
@@ -63,7 +63,7 @@ namespace coursework
                 string.IsNullOrWhiteSpace(tbSignature.Text) ||
                 string.IsNullOrWhiteSpace(tbWay.Text))
             {
-                MessageBox.Show("Заполните все поля!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Р—Р°РїРѕР»РЅРёС‚Рµ РІСЃРµ РїРѕР»СЏ!", "Р’РЅРёРјР°РЅРёРµ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace coursework
 
                     var engine = new GeneratingReviews(inputData.generalData, inputData.students, inputData.advantages, inputData.disadvantages, signaturepath, savepath);
                     engine.CreateReviews();
-                    MessageBox.Show(this, "Все готово!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "Р’СЃРµ РіРѕС‚РѕРІРѕ!", "РЈСЃРїРµС…", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 });
 
@@ -96,7 +96,7 @@ namespace coursework
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР°: {ex.Message}", "РћС€РёР±РєР°", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -120,7 +120,7 @@ namespace coursework
 
                 if (!File.Exists(originalTemplate))
                 {
-                    MessageBox.Show($"Файл не найден по пути: {originalTemplate}");
+                    MessageBox.Show($"Р¤Р°Р№Р» РЅРµ РЅР°Р№РґРµРЅ РїРѕ РїСѓС‚Рё: {originalTemplate}");
                     return;
                 }
 
@@ -135,7 +135,7 @@ namespace coursework
 
                 Process wordProcess = Process.Start(psi);
 
-                MessageBox.Show("Шаблон открыт в Word. Отредактируйте его, сохраните, и закройте Word. Затем нажмите OK в этом окне", "Редактирование", MessageBoxButtons.OK);
+                MessageBox.Show("РЁР°Р±Р»РѕРЅ РѕС‚РєСЂС‹С‚ РІ Word. РћС‚СЂРµРґР°РєС‚РёСЂСѓР№С‚Рµ РµРіРѕ, СЃРѕС…СЂР°РЅРёС‚Рµ, Рё Р·Р°РєСЂРѕР№С‚Рµ Word. Р—Р°С‚РµРј РЅР°Р¶РјРёС‚Рµ OK РІ СЌС‚РѕРј РѕРєРЅРµ", "Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ", MessageBoxButtons.OK);
 
 
                 string[] requiredTags = {
@@ -152,7 +152,7 @@ namespace coursework
                     {
                         if (!fullText.Contains(tag))
                         {
-                            MessageBox.Show($"Ошибка! Вы удалили обязательный тег {tag}. Изменения не будут сохранены", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            MessageBox.Show($"РћС€РёР±РєР°! Р’С‹ СѓРґР°Р»РёР»Рё РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ С‚РµРі {tag}. РР·РјРµРЅРµРЅРёСЏ РЅРµ Р±СѓРґСѓС‚ СЃРѕС…СЂР°РЅРµРЅС‹", "РћС€РёР±РєР°", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             tagNotContain = true;
                         }
                     }
@@ -162,12 +162,12 @@ namespace coursework
 
                 File.Copy(tempTemplate, originalTemplate, true);
 
-                MessageBox.Show("Шаблон успешно обновлен!", "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("РЁР°Р±Р»РѕРЅ СѓСЃРїРµС€РЅРѕ РѕР±РЅРѕРІР»РµРЅ!", "Р“РѕС‚РѕРІРѕ", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Возникла ошибка при попытке редактирования {ex.Message}");
+                MessageBox.Show($"Р’РѕР·РЅРёРєР»Р° РѕС€РёР±РєР° РїСЂРё РїРѕРїС‹С‚РєРµ СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ {ex.Message}");
             }
             finally
             {
@@ -190,12 +190,12 @@ namespace coursework
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Не удалось открыть файл инструкции: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р» РёРЅСЃС‚СЂСѓРєС†РёРё: {ex.Message}", "РћС€РёР±РєР°", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
                 }
             }
             else {
-                MessageBox.Show("Файл 'instruction.pdf' не найден в папке с программой.", "Файл отсутствует", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Р¤Р°Р№Р» 'instruction.pdf' РЅРµ РЅР°Р№РґРµРЅ РІ РїР°РїРєРµ СЃ РїСЂРѕРіСЂР°РјРјРѕР№.", "Р¤Р°Р№Р» РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }
