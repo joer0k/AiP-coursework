@@ -1,16 +1,6 @@
-﻿using ExcelDataReader;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Data;
 using Xceed.Words.NET;
-using System.IO;
-using System.Reflection;
 using Xceed.Document.NET;
-using Microsoft.Office.Interop.Word;
-using System.Collections.Specialized;
 
 namespace coursework
 {
@@ -24,15 +14,6 @@ namespace coursework
 
         public string savePath { get; }
 
-        private readonly List<(int advantageIndex, int disadvantageIndex)> _conflicts =
-        new List<(int, int)>
-        {
-            (5, 0),
-            (1, 1),
-            (4, 2)
-        };
-
-                         
 
         public GeneratingReviews(GeneralData generalData, List<Student> students,
                              List<Comment> advantages, List<Comment> disadvantages,
@@ -45,22 +26,56 @@ namespace coursework
             this.signaturePath = signaturePath;
             this.savePath = savePath;
         }
+        //private void WriteDebugCommentsLog( //Функция для проверки правильности отображения комментариев, создает текстовый файл в котором указаны достоинства и недостатки в работе
+        //    int grade,
+        //    List<Comment> selectedAdvantages,
+        //    List<Comment> selectedDisadvantages)
+        //{
+        //    string logPath = Path.Combine(savePath, "debug_comments.txt");
 
+        //    string text =
+        //        $"Оценка: {grade}{Environment.NewLine}" +
+        //        $"Достоинства:{Environment.NewLine}" +
+        //        string.Join(Environment.NewLine,
+        //            selectedAdvantages.Select(x => $"{x.Text} | ColorKey = {x.ColorKey}")) +
+        //        Environment.NewLine +
+        //        $"Недостатки:{Environment.NewLine}" +
+        //        string.Join(Environment.NewLine,
+        //            selectedDisadvantages.Select(x => $"{x.Text} | ColorKey = {x.ColorKey}")) +
+        //        Environment.NewLine +
+        //        "----------------------------------------" +
+        //        Environment.NewLine;
+
+        //    File.AppendAllText(logPath, text);
+        //}
         private (string advantagesText, string disadvantagesText) GetRandomComments(int grade)
         {
             var (advantagesCount, disadvantagesCount) = GetCommentCountsByGrade(grade);
 
             var availableAdvantages = _advantages
-                .Select((comment, index) => new { Comment = comment, Index = index })
-                .Where(x => IsSuitableForGrade(x.Comment, grade))
+                .Where(comment => IsSuitableForGrade(comment, grade))
                 .ToList();
 
             var availableDisadvantages = _disadvantages
-                .Select((comment, index) => new { Comment = comment, Index = index })
-                .Where(x => IsSuitableForGrade(x.Comment, grade))
+                .Where(comment => IsSuitableForGrade(comment, grade))
                 .ToList();
 
-           
+            if (availableAdvantages.Count < advantagesCount)
+            {
+                throw new Exception(
+                    $"Недостаточно достоинств для оценки {grade}. " +
+                    $"Нужно {advantagesCount}, найдено {availableAdvantages.Count}."
+                );
+            }
+
+            if (availableDisadvantages.Count < disadvantagesCount)
+            {
+                throw new Exception(
+                    $"Недостаточно недостатков для оценки {grade}. " +
+                    $"Нужно {disadvantagesCount}, найдено {availableDisadvantages.Count}."
+                );
+            }
+
             const int maxAttempts = 1000;
 
             for (int attempt = 0; attempt < maxAttempts; attempt++)
@@ -75,20 +90,45 @@ namespace coursework
                     .Take(disadvantagesCount)
                     .ToList();
 
-                bool hasConflict = _conflicts.Any(conflict =>
-                    selectedAdvantages.Any(a => a.Index == conflict.advantageIndex) &&
-                    selectedDisadvantages.Any(d => d.Index == conflict.disadvantageIndex));
+                bool hasConflict = HasColorConflict(selectedAdvantages, selectedDisadvantages);
 
                 if (!hasConflict)
                 {
-                    string advantagesText = string.Join(". ", selectedAdvantages.Select(x => x.Comment.Text));
-                    string disadvantagesText = string.Join(". ", selectedDisadvantages.Select(x => x.Comment.Text));
+                    //WriteDebugCommentsLog(grade, selectedAdvantages, selectedDisadvantages);
+
+                    string advantagesText = string.Join(". ", selectedAdvantages.Select(x => x.Text));
+                    string disadvantagesText = string.Join(". ", selectedDisadvantages.Select(x => x.Text));
 
                     return (advantagesText, disadvantagesText);
                 }
             }
 
-            throw new Exception($"Не удалось подобрать совместимые комментарии для оценки {grade}.");
+            throw new Exception($"Не удалось подобрать совместимые комментарии для оценки {grade}. Проверьте цвета конфликтующих достоинств и недостатков.");
+        }
+
+        private bool HasColorConflict(List<Comment> selectedAdvantages, List<Comment> selectedDisadvantages)
+        {
+            foreach (var advantage in selectedAdvantages)
+            {
+                foreach (var disadvantage in selectedDisadvantages)
+                {
+                    if (IsConflictColor(advantage.ColorKey) &&
+                        advantage.ColorKey == disadvantage.ColorKey)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsConflictColor(int colorKey)
+        {
+            // 0 — нет заливки.
+            // 16777215 — белый цвет.
+            // Такие цвета не считаются конфликтующими.
+            return colorKey != 0 && colorKey != 16777215;
         }
 
         private (int advantagesCount, int disadvantagesCount) GetCommentCountsByGrade(int grade)
@@ -148,7 +188,7 @@ namespace coursework
                 File.Copy(originalTemplatePath, tempTemplatePath, true);
 
                 foreach (var student in _students) {
-                    string outputFileName = Path.Combine(savePath, $"Рецензия_{student.GetFirstName}.docx");
+                    string outputFileName = Path.Combine(savePath, $"Рецензия_{student.GetFIO}.docx");
 
                     var ReplaceMap = new Dictionary<string, string> {
                         {"{NAME}", student.Name },

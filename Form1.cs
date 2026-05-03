@@ -63,40 +63,82 @@ namespace coursework
                 string.IsNullOrWhiteSpace(tbSignature.Text) ||
                 string.IsNullOrWhiteSpace(tbWay.Text))
             {
-                MessageBox.Show("Заполните все поля!", "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "Заполните все поля!",
+                    "Внимание",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
                 return;
             }
 
-
-
             try
             {
-                string templatepath = tbTemplate.Text;
-                string signaturepath = tbSignature.Text;
-                string savepath = tbWay.Text;
+                string excelPath = tbTemplate.Text;
+                string signaturePath = tbSignature.Text;
+                string savePath = tbWay.Text;
 
-                await Task.Run(() =>
+                this.Cursor = Cursors.WaitCursor;
+                btnCreate.Enabled = false;
+                buttonEdit.Enabled = false;
+
+                bool success = await Task.Run(() =>
                 {
-                    this.Cursor = Cursors.WaitCursor;
-                    btnCreate.Enabled = false;
-                    buttonEdit.Enabled = false;
                     var inputData = new SystemInputData();
-                     if (!inputData.ParseExcelFile(templatepath)) {
-                        return;
-                    };
 
-                    var engine = new GeneratingReviews(inputData.generalData, inputData.students, inputData.advantages, inputData.disadvantages, signaturepath, savepath);
+                    if (!inputData.ParseExcelFile(excelPath))
+                    {
+                        return false;
+                    }
+
+                    if (inputData.generalData == null)
+                    {
+                        return false;
+                    }
+
+                    var engine = new GeneratingReviews(
+                        inputData.generalData,
+                        inputData.students,
+                        inputData.advantages,
+                        inputData.disadvantages,
+                        signaturePath,
+                        savePath
+                    );
+
                     engine.CreateReviews();
-                    MessageBox.Show(this, "Все готово!", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
+                    return true;
                 });
 
-
-
+                if (success)
+                {
+                    MessageBox.Show(
+                        this,
+                        "Все готово!",
+                        "Успех",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+                }
+                else
+                {
+                    MessageBox.Show(
+                        this,
+                        "Не удалось создать рецензии. Проверьте Excel-файл.",
+                        "Ошибка",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error
+                    );
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Произошла ошибка: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    $"Произошла ошибка: {ex.Message}",
+                    "Ошибка",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
             }
             finally
             {
@@ -104,8 +146,6 @@ namespace coursework
                 btnCreate.Enabled = true;
                 buttonEdit.Enabled = true;
             }
-            ;
-
         }
 
         private void buttonEdit_Click(object sender, EventArgs e)

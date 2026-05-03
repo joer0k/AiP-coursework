@@ -202,7 +202,6 @@
             Controls.Add(btnTemplate);
             Controls.Add(pictureBox1);
             Controls.Add(label1);
-            HelpButton = true;
             Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
             MaximumSize = new Size(701, 534);

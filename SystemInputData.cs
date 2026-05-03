@@ -1,9 +1,10 @@
-﻿using ExcelDataReader;
+﻿using Excel = Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+
 namespace coursework
 {
     internal class SystemInputData
@@ -11,70 +12,107 @@ namespace coursework
         public List<Student> students = new List<Student>();
         public List<Comment> advantages = new List<Comment>();
         public List<Comment> disadvantages = new List<Comment>();
-        public GeneralData generalData;
+        public GeneralData generalData = null!;
 
         public bool ParseExcelFile(string path)
         {
+            Excel.Application excelApp = null;
+            Excel.Workbooks workbooks = null;
+            Excel.Workbook workbook = null;
+            Excel.Sheets sheets = null;
+
             try
             {
-                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
-                using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                if (!File.Exists(path))
                 {
-                    using (var reader = ExcelReaderFactory.CreateReader(stream))
+                    MessageBox.Show("Файл Excel не найден.");
+                    return false;
+                }
+
+                excelApp = new Excel.Application();
+                excelApp.Visible = false;
+                excelApp.DisplayAlerts = false;
+
+                workbooks = excelApp.Workbooks;
+                workbook = workbooks.Open(path, ReadOnly: true);
+                sheets = workbook.Worksheets;
+
+                for (int i = 1; i <= sheets.Count; i++)
+                {
+                    Excel.Worksheet sheet = null;
+
+                    try
                     {
-                        var result = reader.AsDataSet();
+                        sheet = (Excel.Worksheet)sheets[i];
 
-                        foreach (DataTable table in result.Tables)
+                        switch (sheet.Name)
                         {
-                            switch (table.TableName)
-                            {
-                                case "Общие данные":
-                                    ReadGeneralData(table);
-                                    break;
+                            case "Общие данные":
+                                ReadGeneralData(sheet);
+                                break;
 
-                                case "Недостатки":
-                                    ReadComments(table, disadvantages);
-                                    break;
+                            case "Недостатки":
+                                ReadComments(sheet, disadvantages);
+                                break;
 
-                                case "Достоинства":
-                                    ReadComments(table, advantages);
-                                    break;
+                            case "Достоинства":
+                                ReadComments(sheet, advantages);
+                                break;
 
-                                case "Список студентов":
-                                    ReadStudent(table);
-                                    break;
-                            }
+                            case "Список студентов":
+                                ReadStudent(sheet);
+                                break;
                         }
-                        
-
-                        return true;
+                    }
+                    finally
+                    {
+                        ReleaseComObject(sheet);
                     }
                 }
+
+                if (generalData == null)
+                {
+                    MessageBox.Show("Не найден лист 'Общие данные'.");
+                    return false;
+                }
+
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Ошибка чтения Excel: " + ex.Message);
                 return false;
             }
+            finally
+            {
+                if (workbook != null)
+                    workbook.Close(false);
+
+                ReleaseComObject(sheets);
+                ReleaseComObject(workbook);
+                ReleaseComObject(workbooks);
+
+                if (excelApp != null)
+                    excelApp.Quit();
+
+                ReleaseComObject(excelApp);
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
         }
 
-
-        public void ReadGeneralData(DataTable table)
+        public void ReadGeneralData(Excel.Worksheet sheet)
         {
-
-            string type = table.Rows[0][1]?.ToString();
-            string course = table.Rows[3][1]?.ToString();
-            string direction = table.Rows[4][1]?.ToString();
-            string directivity = table.Rows[5][1]?.ToString();
-            string formOfEducation = table.Rows[6][1]?.ToString();
-            string teacherName = table.Rows[7][1]?.ToString();
-            string academic = table.Rows[8][1]?.ToString();
-            string group = table.Rows[9][1]?.ToString();
-
-
-            string sDate = table.Rows[10][1]?.ToString();
-            
+            string type = GetCellText(sheet, 1, 2);
+            string course = GetCellText(sheet, 4, 2);
+            string direction = GetCellText(sheet, 5, 2);
+            string directivity = GetCellText(sheet, 6, 2);
+            string formOfEducation = GetCellText(sheet, 7, 2);
+            string teacherName = GetCellText(sheet, 8, 2);
+            string academic = GetCellText(sheet, 9, 2);
+            string group = GetCellText(sheet, 10, 2);
+            string sDate = GetCellText(sheet, 11, 2);
 
             generalData = new GeneralData(
                 type,
@@ -89,13 +127,18 @@ namespace coursework
             );
         }
 
-        public void ReadComments(DataTable table, List<Comment> list) {
+        public void ReadComments(Excel.Worksheet sheet, List<Comment> list)
+        {
             list.Clear();
-            for (int i = 1; i < table.Rows.Count; i++) {
-                var row = table.Rows[i];
-                string text = row[0]?.ToString();
-                if (!string.IsNullOrWhiteSpace(text)) {
-                    
+
+            int lastRow = GetLastUsedRow(sheet);
+
+            for (int i = 2; i <= lastRow; i++)
+            {
+                string text = GetCellText(sheet, i, 1);
+
+                if (!string.IsNullOrWhiteSpace(text))
+                {
                     string formattedText = text.Trim();
 
                     if (formattedText.EndsWith("."))
@@ -108,34 +151,124 @@ namespace coursework
                         formattedText = char.ToUpper(formattedText[0]) + formattedText.Substring(1);
                     }
 
+                    bool g3 = !string.IsNullOrWhiteSpace(GetCellText(sheet, i, 2));
+                    bool g4 = !string.IsNullOrWhiteSpace(GetCellText(sheet, i, 3));
+                    bool g5 = !string.IsNullOrWhiteSpace(GetCellText(sheet, i, 4));
+
+                    int colorKey = GetCellColorKey(sheet, i, 1);
+
                     list.Add(new Comment(
-                                formattedText,
-                                !string.IsNullOrWhiteSpace(row[1]?.ToString()), 
-                                !string.IsNullOrWhiteSpace(row[2]?.ToString()),
-                                !string.IsNullOrWhiteSpace(row[3]?.ToString()) 
-                            ));
+                        formattedText,
+                        g3,
+                        g4,
+                        g5,
+                        colorKey
+                    ));
                 }
             }
         }
 
-        public void ReadStudent(DataTable table) {
+        public void ReadStudent(Excel.Worksheet sheet)
+        {
             students.Clear();
-            for (int i = 1; i < table.Rows.Count; i++) {
-                var row = table.Rows[i];
-                string name = row[0]?.ToString() ?? "";
 
-                if (string.IsNullOrEmpty(name)) continue;
-                
-                string topic = row[1]?.ToString() ?? "";
+            int lastRow = GetLastUsedRow(sheet);
 
-                if (int.TryParse(row[2]?.ToString() ?? "", out int grade)) {
+            for (int i = 2; i <= lastRow; i++)
+            {
+                string name = GetCellText(sheet, i, 1);
+
+                if (string.IsNullOrWhiteSpace(name))
+                    continue;
+
+                string topic = GetCellText(sheet, i, 2);
+                string gradeText = GetCellText(sheet, i, 3);
+
+                if (int.TryParse(gradeText, out int grade))
+                {
                     students.Add(new Student(name, topic, grade));
                 }
             }
         }
 
-        
+        private string GetCellText(Excel.Worksheet sheet, int row, int column)
+        {
+            Excel.Range cell = null;
 
-        
+            try
+            {
+                cell = (Excel.Range)sheet.Cells[row, column];
+                return cell.Text?.ToString() ?? "";
+            }
+            finally
+            {
+                ReleaseComObject(cell);
+            }
+        }
+
+        private int GetCellColorKey(Excel.Worksheet sheet, int row, int column)
+        {
+            Excel.Range cell = null;
+            Excel.Interior interior = null;
+
+            try
+            {
+                cell = (Excel.Range)sheet.Cells[row, column];
+                interior = cell.Interior;
+
+                int colorIndex = Convert.ToInt32(interior.ColorIndex);
+
+                // -4142 означает отсутствие заливки
+                if (colorIndex == -4142)
+                    return 0;
+
+                int color = Convert.ToInt32(interior.Color);
+
+                // 16777215 — белый цвет, его тоже не считаем конфликтным
+                if (color == 16777215)
+                    return 0;
+
+                return color;
+            }
+            finally
+            {
+                ReleaseComObject(interior);
+                ReleaseComObject(cell);
+            }
+        }
+
+        private int GetLastUsedRow(Excel.Worksheet sheet)
+        {
+            Excel.Range usedRange = null;
+            Excel.Range rows = null;
+
+            try
+            {
+                usedRange = sheet.UsedRange;
+                rows = usedRange.Rows;
+
+                return usedRange.Row + rows.Count - 1;
+            }
+            finally
+            {
+                ReleaseComObject(rows);
+                ReleaseComObject(usedRange);
+            }
+        }
+
+        private void ReleaseComObject(object obj)
+        {
+            if (obj != null)
+            {
+                try
+                {
+                    Marshal.ReleaseComObject(obj);
+                }
+                catch
+                {
+                    // Если объект уже освобождён, ничего не делаем
+                }
+            }
+        }
     }
 }
