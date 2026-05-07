@@ -153,11 +153,11 @@ namespace coursework
         }
         private void AddSignatureLikeOldVersion(Word.Application wordApp, string imagePath)
         {
+            Word.Document document = wordApp.ActiveDocument;
             Word.Selection selection = wordApp.Selection;
 
             selection.Find.ClearFormatting();
             selection.Find.Replacement.ClearFormatting();
-
             selection.Find.Text = "{SIGNATURE}";
 
             bool found = selection.Find.Execute(
@@ -166,25 +166,30 @@ namespace coursework
 
             if (!found)
             {
-                throw new Exception("В шаблоне не найдена метка Signature для вставки подписи.");
+                throw new Exception("В шаблоне не найден маркер {SIGNATURE} для вставки подписи.");
             }
 
             Word.Range range = selection.Range;
 
+            document.Repaginate();
+
+            float markerLeft = Convert.ToSingle(
+                range.Information[Word.WdInformation.wdHorizontalPositionRelativeToPage]
+            );
+
+            float markerTop = Convert.ToSingle(
+                range.Information[Word.WdInformation.wdVerticalPositionRelativeToPage]
+            );
+
             range.Text = "";
             range.Collapse(Word.WdCollapseDirection.wdCollapseStart);
 
-            Word.Shape shape = wordApp.ActiveDocument.Shapes.AddPicture(
+            Word.Shape shape = document.Shapes.AddPicture(
                 FileName: imagePath,
                 LinkToFile: false,
                 SaveWithDocument: true,
                 Anchor: range
             );
-
-            shape.LockAspectRatio = Microsoft.Office.Core.MsoTriState.msoTrue;
-            shape.Width = 80;
-
-            shape.WrapFormat.Type = Word.WdWrapType.wdWrapBehind;
 
             shape.RelativeHorizontalPosition =
                 Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
@@ -192,9 +197,13 @@ namespace coursework
             shape.RelativeVerticalPosition =
                 Word.WdRelativeVerticalPosition.wdRelativeVerticalPositionPage;
 
-            shape.Left = 160;
-            shape.Top = 635;
+            shape.WrapFormat.Type = Word.WdWrapType.wdWrapBehind;
 
+            shape.Left = markerLeft + 30;
+            shape.Top = markerTop - 10;
+
+            shape.LockAspectRatio = Microsoft.Office.Core.MsoTriState.msoTrue;
+            shape.Width = 80;
         }
 
         private void ReplaceWordText(Word.Application wordApp, string oldText, string newText)
@@ -292,7 +301,7 @@ namespace coursework
                             doc.ReplaceText(new StringReplaceTextOptions
                             {
                                 SearchValue = "{GRADE" + $"{i + 1}" + "}",
-                                NewValue = $"{student.Grade}"
+                                NewValue = $"{student.RatingText}"
                             });
                         }
 

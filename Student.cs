@@ -12,6 +12,8 @@ namespace coursework
         public string TopicWork { get; set; }
         public int Grade { get; set; }
 
+        private string[] rating = { "неудовлетворительно", "удовлетворительно", "хорошо", "отлично" };
+
         public List<string> SelectedAdvantages { get; set; } = new List<string>();
         public List<string> SelectedDisadvantages { get; set; } = new List<string>();
 
@@ -24,9 +26,15 @@ namespace coursework
         public string ConformityRating {
             get
             {
-               
-                string[] rating = { "неудовлетворительно", "удовлетворительно", "хорошо", "отлично" }; 
                 return (Grade >= 2 && Grade <= 5) ? $"{Grade} ({rating[Grade - 2]})" : "вне диапазона";
+            }
+        }
+
+        public string RatingText
+        {
+            get
+            {
+                return (Grade >= 2 && Grade <= 5) ? $"{rating[Grade - 2]}" : "вне диапазона";
             }
         }
 
