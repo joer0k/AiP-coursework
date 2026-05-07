@@ -1,7 +1,6 @@
-﻿using System.Data;
-using Xceed.Words.NET;
+﻿using Xceed.Words.NET;
 using Xceed.Document.NET;
-
+using Word = Microsoft.Office.Interop.Word;
 namespace coursework
 {
     internal class GeneratingReviews
@@ -152,22 +151,101 @@ namespace coursework
                 _ => false
             };
         }
+        private void AddSignatureLikeOldVersion(Word.Application wordApp, string imagePath)
+        {
+            Word.Selection selection = wordApp.Selection;
 
-        private void ConvertToPDF(string docxPath) {
+            selection.Find.ClearFormatting();
+            selection.Find.Replacement.ClearFormatting();
+
+            selection.Find.Text = "{SIGNATURE}";
+
+            bool found = selection.Find.Execute(
+                Replace: Word.WdReplace.wdReplaceNone
+            );
+
+            if (!found)
+            {
+                throw new Exception("В шаблоне не найдена метка Signature для вставки подписи.");
+            }
+
+            Word.Range range = selection.Range;
+
+            range.Text = "";
+            range.Collapse(Word.WdCollapseDirection.wdCollapseStart);
+
+            Word.Shape shape = wordApp.ActiveDocument.Shapes.AddPicture(
+                FileName: imagePath,
+                LinkToFile: false,
+                SaveWithDocument: true,
+                Anchor: range
+            );
+
+            shape.LockAspectRatio = Microsoft.Office.Core.MsoTriState.msoTrue;
+            shape.Width = 80;
+
+            shape.WrapFormat.Type = Word.WdWrapType.wdWrapBehind;
+
+            shape.RelativeHorizontalPosition =
+                Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
+
+            shape.RelativeVerticalPosition =
+                Word.WdRelativeVerticalPosition.wdRelativeVerticalPositionPage;
+
+            shape.Left = 160;
+            shape.Top = 635;
+
+        }
+
+        private void ReplaceWordText(Word.Application wordApp, string oldText, string newText)
+        {
+            wordApp.Selection.Find.ClearFormatting();
+            wordApp.Selection.Find.Replacement.ClearFormatting();
+
+            wordApp.Selection.Find.Execute(
+                FindText: oldText,
+                ReplaceWith: newText,
+                Replace: Word.WdReplace.wdReplaceAll
+            );
+        }
+
+        private void AddSignatureAndConvertToPDF(string docxPath)
+        {
             string pdfPath = Path.ChangeExtension(docxPath, ".pdf");
-            var wordApp = new Microsoft.Office.Interop.Word.Application();
+
+            Word.Application wordApp = null;
+            Word.Document document = null;
 
             try
             {
-                var document = wordApp.Documents.Open(docxPath);
-                document.ExportAsFixedFormat(pdfPath, Microsoft.Office.Interop.Word.WdExportFormat.wdExportFormatPDF);
-                document.Close(false);
+                wordApp = new Word.Application();
+                wordApp.Visible = false;
 
-            }
-            finally {
-                wordApp.Quit();
-            }
+                document = wordApp.Documents.Open(docxPath);
 
+                if (File.Exists(signaturePath))
+                {
+                    AddSignatureLikeOldVersion(wordApp, signaturePath);
+                    document.Save();
+                }
+                else
+                {
+                    ReplaceWordText(wordApp, "{SIGNATURE}", "");
+                }
+
+                document.ExportAsFixedFormat(
+                    pdfPath,
+                    Word.WdExportFormat.wdExportFormatPDF
+                );
+            }
+            finally
+            {
+                if (document != null)
+                    document.Close(false);
+
+                if (wordApp != null)
+                    wordApp.Quit();
+            }
         }
 
         public void CreateReviews() {
@@ -233,25 +311,26 @@ namespace coursework
                             NewValue = comments.disadvantagesText
                         });
 
-                        if (File.Exists(signaturePath))
-                        {
-                            var image = doc.AddImage(signaturePath);
+                        //if (File.Exists(signaturePath))
+                        //{
+                        //    var image = doc.AddImage(signaturePath);
 
-                            float height = 48.19f;
-                            float width = 103.19f;
+                        //    float height = 48.19f;
+                        //    float width = 103.19f;
 
-                            var picture = image.CreatePicture(height, width);
+                        //    var picture = image.CreatePicture(height, width);
 
-                            var bookmark = doc.Bookmarks["SIGNATURE"];
-                            bookmark.Paragraph.AppendPicture(picture);
+                        //    var bookmark = doc.Bookmarks["SIGNATURE"];
+                        //    bookmark.Paragraph.AppendPicture(picture);
                             
-                        }
+                        //}
                         doc.SaveAs(outputFileName);
-                        ConvertToPDF(outputFileName);
                     }
+                    AddSignatureAndConvertToPDF(outputFileName);
+
 
                 }
-                
+
             }
             finally {
                 if (File.Exists(tempTemplatePath)) File.Delete(tempTemplatePath);

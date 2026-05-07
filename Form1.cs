@@ -182,7 +182,7 @@ namespace coursework
                     "{NAME}", "{COURSE}", "{DIRECTIONOFTRAINING}",
                     "{DIRECTIVITY}", "{THEME}", "{ACADEMICTITLE}",
                     "{TEACHER}", "{GRADE}", "{DATE}",
-                    "{ADVANTAGES}", "{DISADVANTAGES}",
+                    "{ADVANTAGES}", "{DISADVANTAGES}", "{SIGNATURE}"
                 };
                 bool tagNotContain = false;
                 using (var doc = Xceed.Words.NET.DocX.Load(tempTemplate))
