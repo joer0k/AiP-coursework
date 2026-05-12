@@ -191,6 +191,8 @@ namespace coursework
                 Anchor: range
             );
 
+            ResizeSignature(shape);
+
             shape.RelativeHorizontalPosition =
                 Word.WdRelativeHorizontalPosition.wdRelativeHorizontalPositionPage;
 
@@ -199,11 +201,8 @@ namespace coursework
 
             shape.WrapFormat.Type = Word.WdWrapType.wdWrapBehind;
 
-            shape.Left = markerLeft + 30;
-            shape.Top = markerTop - 10;
-
-            shape.LockAspectRatio = Microsoft.Office.Core.MsoTriState.msoTrue;
-            shape.Width = 80;
+            shape.Left = markerLeft + 20;
+            shape.Top = markerTop - 20;
         }
 
         private void ReplaceWordText(Word.Application wordApp, string oldText, string newText)
@@ -217,6 +216,51 @@ namespace coursework
                 Replace: Word.WdReplace.wdReplaceAll
             );
         }
+
+        private void ResizeSignature(Word.Shape shape)
+        {
+            float minWidth = 90f;
+            float minHeight = 25f;
+
+            float maxWidth = 140f;
+            float maxHeight = 50f;
+
+            shape.LockAspectRatio = Microsoft.Office.Core.MsoTriState.msoTrue;
+
+            float originalWidth = shape.Width;
+            float originalHeight = shape.Height;
+
+            if (originalWidth <= 0 || originalHeight <= 0)
+            {
+                shape.Width = 120f;
+                return;
+            }
+
+            float scale = 1f;
+
+            // Если картинка слишком большая — уменьшаем
+            if (originalWidth > maxWidth || originalHeight > maxHeight)
+            {
+                scale = Math.Min(maxWidth / originalWidth, maxHeight / originalHeight);
+            }
+
+            float newWidth = originalWidth * scale;
+            float newHeight = originalHeight * scale;
+
+            // Если картинка слишком маленькая — увеличиваем
+            if (newWidth < minWidth || newHeight < minHeight)
+            {
+                float scaleUp = Math.Max(minWidth / newWidth, minHeight / newHeight);
+
+                // Не даём картинке выйти за максимальные размеры
+                float maxScaleUp = Math.Min(maxWidth / newWidth, maxHeight / newHeight);
+
+                scale *= Math.Min(scaleUp, maxScaleUp);
+            }
+
+            shape.Width = originalWidth * scale;
+        }
+
 
         private void AddSignatureAndConvertToPDF(string docxPath)
         {
@@ -279,6 +323,8 @@ namespace coursework
 
                     var ReplaceMap = new Dictionary<string, string> {
                         {"{NAME}", student.Name },
+                        {"{TYPEWORK}", _generalData.type },
+                        {"{TYPEWORK2}", _generalData.type == "курсовой проект" ? "курсового проекта" : "курсовой работы"},
                         {"{COURSE}", _generalData.course },
                         {"{DIRECTIONOFTRAINING}", _generalData.directionOfTraining },
                         {"{DIRECTIVITY}", _generalData.directivity },

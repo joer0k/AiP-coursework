@@ -104,7 +104,26 @@ namespace coursework
 
         public void ReadGeneralData(Excel.Worksheet sheet)
         {
-            string type = GetCellText(sheet, 1, 2);
+            string projectMark = GetCellText(sheet, 2, 2).Trim();
+            string workMark = GetCellText(sheet, 3, 2).Trim();
+
+            string type;
+            if (projectMark == "+" && workMark == "+")
+            {
+                throw new Exception("В листе Общие данные нельзя одновременно выбрать тип Работа и Проект");
+            }
+            else if (projectMark == "+") {
+                type = "курсовой проект";
+            }
+            else if (workMark == "+") {
+                type = "курсовую работу";
+            } else
+            {
+                throw new Exception("В листе 'Общие данные' необходимо поставить '+' напротив 'Проект' или 'Работа'.");
+            }
+
+
+            //string type = GetCellText(sheet, 1, 2);
             string course = GetCellText(sheet, 4, 2);
             string direction = GetCellText(sheet, 5, 2);
             string directivity = GetCellText(sheet, 6, 2);
